@@ -5,39 +5,231 @@
 #include<iostream>
 using namespace std;
 
-class mystring{
-
+class mystring
+{
     friend ostream&operator<<(ostream&out,const mystring&s);
     friend istream&operator>>(istream&in,mystring&s);
 
 private:
     char *p;
-    int len;;
 
 public:
+    int len;
+    class iterator ;
     mystring();
+    mystring(const char *s);
+    mystring(mystring const&s);
     ~mystring();
 
 public :
-    mystring(const char *s);
-    mystring(mystring const&s);
     char operator[](const int i);
     mystring& operator=(const mystring&s);
     mystring& operator=(const char * s);
     bool operator==(mystring const&s);
     bool operator==(const char *s);
+    mystring& operator+=(const char*s) ;
+    mystring& operator+=(mystring const s) ;
     bool operator!=(const char *s);
     bool operator!=(const mystring&s);
     bool operator<(const mystring&s);
     bool operator<(const char *s);
     bool operator>(const mystring &s);
+
+public :
+    char* c_str() ;
     int length();
     bool operator>(const char *s);
     int indexof(const char& s);
     int lastIndexOf(const char &s);
-    char *substring(int start,int end);
-    char * data();
+    char* substr(int start, int  end);
+    char* substr(int start) ;
+    char* data();
+
+public :
+    iterator  end()const 
+    {
+        if(this->len == 0)
+        {
+            throw exception() ;
+        }
+
+        int len = strlen(this->p) ;
+        return iterator(this, len) ;
+    }
+
+    iterator begin()const
+    {
+        if(this->len == 0)
+        {
+            throw exception() ;
+        }
+        int s = 0 ;
+        iterator its = iterator(this, s) ;
+        return its ;
+    }
+   /* 
+    //删除，这里卡住了......
+    void erase(iterator& its)
+    {
+    
+        if(its.index < 0||its.index > len)
+        {
+            throw exception() ;
+        }
+        
+        if((size_t)its.index == strlen(its.it->p))  
+        {
+            iterator* temp = new iterator();
+            *(temp->it) += this->substr(0, its.index);
+            *(temp->it) += this->substr(its.index+1) ;
+                           
+            its = *temp ;
+            p[its.it->len-1]='\0' ;
+        }
+            
+        else
+        {
+            cout << len <<endl ;
+            for(int i=its.index; i<len; i++ ) 
+            {
+                p[i] = p[i+1] ;
+                its.index--;
+            }
+        }
+    }
+  */
+public :
+    //迭代器
+    class iterator{
+
+    public : 
+        mystring* it;
+        int index ;
+
+    public :
+        
+        iterator(){ it = new mystring() ; index = 0 ;}
+        
+        iterator(const mystring* str, int i)
+        {
+            if(i > str->len || i < 0)
+            {
+                throw exception() ;
+            }
+            it = new mystring(*str) ;
+            it->len = str->len ;
+            this->index = i ;
+        }
+        
+        ~iterator()
+        {
+            delete it ;
+            it = NULL ;
+            index = 0 ;
+        }
+    
+    public :
+        
+        bool operator==(iterator const its)
+        {
+            if(its.index == this->index&&its.it == this->it)
+            {
+                return true ;
+            }
+            return false ;
+        }
+            
+        //此处记一坑
+        //返回值为迭代器引用并不是迭代器对象！！！
+        iterator& operator=(iterator const s)
+        {   
+            if(s.it == NULL)
+            {
+                throw exception();
+            }
+                
+            this->index = s.index ;
+            this->it = new mystring(*(s.it)) ;
+            return *this ;
+        }
+        
+        iterator& operator --()
+        {   
+            if(it->len < 0)
+            {
+                throw exception() ;
+            }
+
+            else
+            {
+                this->index -- ;
+                return *this  ;
+            }
+        }
+        
+        bool operator!=(iterator s)
+        {
+            return this->index == s.index?false:true ;
+        }
+
+        //i++操作 
+        void operator++()
+        {
+            
+            if(it->len-1 == this->index)
+            {
+                throw exception() ;    
+            }
+            ++this->index ;
+        }
+
+        //++i操作
+        void operator++(int i)
+        {
+            i = 1 ;
+            if(strlen(this->it->p) < (size_t)this->index)
+            {
+                throw exception() ;
+            }
+
+            this->index += i ;
+        }
+
+        char operator*()
+        {
+           if(it == NULL)
+            {
+                throw exception() ;
+            }
+            
+            return this->it->p[index];
+        }
+    };
 };
+
+mystring& mystring::operator+=(mystring const s)
+{
+    if(s.len == 0)
+    {
+        return *this ;
+    }
+    else
+    {
+        char* q = new char[strlen(s.p)+strlen(p)+1] ;
+        strcpy(q, p);
+        strcat(q, s.p) ;
+        free(p) ;
+        p = new char[strlen(q)+1];
+        strcpy(p, q) ;
+        free(q) ;
+        return *this ;
+    }
+}
+
+char* mystring:: c_str()
+{
+    return p ;
+}
 
 int mystring::lastIndexOf(const char& s){
     
@@ -49,9 +241,31 @@ int mystring::lastIndexOf(const char& s){
     }
     return -1;
 }
+
 int mystring::length(){
     return len;
 }
+
+mystring& mystring::operator+=(const char*s)
+{
+    if(p == NULL)
+    {
+        return *this;
+    }
+    else
+    {
+        char * q= new char[strlen(s)+strlen(p)+1];
+        strcpy(q, p);
+        strcat(q, s);
+        free(p);
+        p = new char[strlen(s)+1] ;
+        strcpy(p,s) ;
+        len = strlen(p);
+        free(q) ;
+    }
+    return *this ;
+}
+
 int mystring::indexof(const char&s){
     for(int i=0;i<len;i++){
         if(p[i]==s){
@@ -87,6 +301,7 @@ bool mystring::operator<(const char*s){
         return true;
     }
 }
+
 bool mystring::operator>(const mystring&s){
     
     if(strcmp(p,s.p)>0){
@@ -96,6 +311,7 @@ bool mystring::operator>(const mystring&s){
         return false;
     }
 }
+
 bool mystring::operator>(const char*s){
     if(strcmp(p,s)>0){
         return true;
@@ -126,7 +342,7 @@ char mystring::operator[](const int i){
     }
 }
 
-ostream&operator<<(ostream&out,const mystring &s){
+ostream&operator<<(ostream& out,const mystring &s){
     out<<s.p;
     return out;
 }
@@ -163,15 +379,17 @@ mystring& mystring::operator=(const char *s){
         p = new char[len+1];
         strcpy(p,"");
     }
+
     else{
         len = strlen(s);
         p = new char[len+1];
         strcpy(p,s);
     }
+
     return *this;
 }
 
-char* mystring :: substring(int start, int end)
+char* mystring :: substr(int start, int end)
 {   
 
     if((end-start) < 0|| end > len)
@@ -183,6 +401,15 @@ char* mystring :: substring(int start, int end)
     q = (char* )malloc (end-start+3);
     strncpy(q, p+start, end-start) ;
     return q ;
+}
+
+char* mystring ::  substr(int start)
+{   
+    if(start < 0 || start > len)
+    {
+        throw exception() ;
+    }   
+    return p+start ;
 }
 
 mystring::mystring(const char*s){
